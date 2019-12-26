@@ -1,0 +1,91 @@
+// Déclaration des Pins
+const int Relais = 4;
+const int Photo_int1 = 2;
+const int Photo_int2 = 3;
+const char Photo_out = A5;
+
+// Déclaration des variables
+const int X = 500; //On doit définir la valeur du taux de luminosité à considérer
+
+int Cut_las1, Cut_las2, Capt_out;
+int  Num_perso =0;
+byte n1 = -1;
+byte n2 = -1;
+bool Actif = 0;
+
+//Définition des fonctions à utiliser.
+void System();
+void int_las1();
+void int_las2();
+void Memory();
+void Light();
+void Re_init();
+
+
+
+void setup() {
+  pinMode(Relais, OUTPUT);
+  pinMode(Photo_int1, INPUT_PULLUP);
+  pinMode(Photo_int2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(Photo_int1), int_las1, FALLING);
+  attachInterrupt(digitalPinToInterrupt(Photo_int2), int_las2, FALLING);
+}
+
+void loop() {
+  System();
+  if(Actif){
+    Light();
+    }
+}
+
+//Fontion de détection du jour ou de nuit...
+void System(){
+ Capt_out = analogRead(Photo_out);
+ if (Capt_out > X){
+  Actif = 1;
+  }
+ else Actif = 0;
+}
+
+//Déclaraton des fonctions s'exécutant durant les interruptions... 
+void int_las1(){
+  if (n2 != 1){
+    n1 = 1;
+    }
+  else n1 = 0;
+} 
+
+void int_las2(){
+  if(n1 != 1){
+    n2 = 1;
+    }
+   else n2 = 0;
+}
+
+//fonction de comptage des personnes dans la chambre...
+void Memory(){
+if(n1 == 1 && n2 == 0){//Si premier laser coupé avant second incrémenté le nombre de personnes à l'intérieur de la pièce.
+  Num_perso += 1;
+  Re_init();
+  }
+else if(n1 == 0 && n2 == 1){//Si second laser coupé avant le premier décrémenter le nombre de personnes.
+  Num_perso -= 1;
+  Re_init();
+  }
+}
+
+//Fonction d'allumage de la pièce en fonction du nombre de personne...
+void Light(){
+Memory();
+if (Num_perso <= 0){// Compare si le 
+  Num_perso =0;
+  digitalWrite(Relais, LOW);
+  }
+else digitalWrite(Relais, HIGH);
+}
+
+void Re_init(){
+n1 = -1;
+n2 = -1;
+}
+
